@@ -47,7 +47,7 @@ test('mobile layout keeps editor and preview usable without horizontal page over
   expect(await page.getByLabel('Resume preview').evaluate((element) => parseFloat(getComputedStyle(element).fontSize))).toBeGreaterThanOrEqual(14);
 });
 
-test('workspace panels fill available width without outer side gutters', async ({ page }) => {
+test('workspace content has modest responsive spacing at both edges', async ({ page }) => {
   for (const width of [320, 375, 760, 1024, 1440, 1920]) {
     await page.setViewportSize({ width, height: 900 });
     await page.goto('/');
@@ -62,6 +62,9 @@ test('workspace panels fill available width without outer side gutters', async (
         mainLeft: main.left,
         columnsLeft: columns.left,
         columnsRight: columns.right,
+        headingLeft: document.querySelector('.page-heading')!.getBoundingClientRect().left,
+        downloadRight: document.querySelector('.download-top')!.getBoundingClientRect().right,
+        previewRight: document.querySelector('.preview-column')!.getBoundingClientRect().right,
         sidebarRight: getComputedStyle(sidebar).display === 'none' ? 0 : sidebar.getBoundingClientRect().right,
         scrollWidth: document.documentElement.scrollWidth,
       };
@@ -69,8 +72,13 @@ test('workspace panels fill available width without outer side gutters', async (
     expect(layout.workspaceLeft).toBe(0);
     expect(layout.workspaceRight).toBe(width);
     expect(layout.mainLeft).toBe(layout.sidebarRight);
-    expect(layout.columnsLeft).toBe(layout.mainLeft);
-    expect(layout.columnsRight).toBe(width);
+    expect(layout.columnsLeft - layout.mainLeft).toBeGreaterThanOrEqual(12);
+    expect(width - layout.columnsRight).toBeGreaterThanOrEqual(12);
+    expect(layout.headingLeft - layout.mainLeft).toBeGreaterThanOrEqual(12);
+    expect(width - layout.downloadRight).toBeGreaterThanOrEqual(12);
+    expect(width - layout.previewRight).toBeGreaterThanOrEqual(12);
+    expect(layout.columnsLeft - layout.mainLeft).toBeLessThanOrEqual(24);
+    expect(width - layout.columnsRight).toBeLessThanOrEqual(24);
     expect(layout.scrollWidth).toBeLessThanOrEqual(width);
   }
 });

@@ -24,7 +24,7 @@
 @media(max-width:760px){.download-top{font-size:14px}.page-heading{align-items:flex-start}.preview-footer span,.column-heading p{font-size:13px}.resume-paper{padding:7%}}
 @media(max-width:430px){.page-heading{flex-wrap:wrap}.date-grid{grid-template-columns:1fr 1fr}.preview-stage{padding:20px 5%}.import-actions{flex-wrap:wrap}}
 .workspace{max-width:none;margin:0}
-.main-content{padding-inline:0}
+.main-content{padding-inline:clamp(12px,2vw,24px)}
 .editor-column{padding-inline:24px}
 .preview-column{top:0;max-height:100vh;overflow-y:auto;overscroll-behavior:contain}
 @media(max-width:760px){.editor-column{padding-inline:16px}.preview-column{max-height:none;overflow:visible}}
