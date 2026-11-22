@@ -2,10 +2,11 @@ import { useEffect, useId, useState, type ReactNode } from 'react';
 import { ArrowDownToLine, ArrowRight, BriefcaseBusiness, Check, CircleAlert, FileText, GraduationCap, LayoutDashboard, Lightbulb, Link as LinkIcon, LockKeyhole, Plus, ScanLine, Sparkles, Trash2, UserRound, Wrench, FolderKanban } from 'lucide-react';
 import { blankDocument, newEntry, type DocumentData, type Entry, type Resume } from './model';
 import { loadDocument, saveDocument } from './storage';
-import { scoreResume, type ScoreResult } from './scoring';
+import { scoreReadiness, scoreResume, type ReadinessResult, type ScoreResult } from './scoring';
 import ResumePreview from './ResumePreview';
 import { downloadPdf } from './pdf';
 import ImportResume from './ImportResume';
+import Dashboard from './Dashboard';
 
 type SectionName = 'experience' | 'education' | 'projects';
 type TextField = Exclude<keyof Resume, SectionName>;
@@ -72,8 +73,28 @@ export default function App() {
   const [storageError, setStorageError] = useState<string | null>(loaded.error);
   const [blocked, setBlocked] = useState(Boolean(loaded.error));
   const [score, setScore] = useState<ScoreResult | null>(null);
+  const [dashboardScore, setDashboardScore] = useState<ReadinessResult | null>(null);
+  const [view, setView] = useState<'home' | 'editor'>(() =>
+    new URLSearchParams(window.location.search).get('view') === 'editor' ? 'editor' : 'home');
   const [pdfError, setPdfError] = useState<string | null>(null);
   const [exporting, setExporting] = useState(false);
+
+  useEffect(() => {
+    const handleNavigation = () => setView(new URLSearchParams(window.location.search).get('view') === 'editor' ? 'editor' : 'home');
+    window.addEventListener('popstate', handleNavigation);
+    return () => window.removeEventListener('popstate', handleNavigation);
+  }, []);
+
+  function navigate(next: 'home' | 'editor') {
+    if (next === view) return;
+    const url = new URL(window.location.href);
+    if (next === 'editor') url.searchParams.set('view', 'editor');
+    else url.searchParams.delete('view');
+    url.hash = '';
+    window.history.pushState(null, '', url);
+    setView(next);
+    window.scrollTo(0, 0);
+  }
 
   useEffect(() => {
     if (blocked) return;
@@ -84,10 +105,12 @@ export default function App() {
   function changeResume(field: TextField, value: string) {
     setData((previous) => ({ ...previous, resume: { ...previous.resume, [field]: value } }));
     setScore(null);
+    setDashboardScore(null);
   }
   function changeEntries(field: SectionName, entries: Entry[]) {
     setData((previous) => ({ ...previous, resume: { ...previous.resume, [field]: entries } }));
     setScore(null);
+    setDashboardScore(null);
   }
   function applyImport(imported: Resume, selected: (keyof Resume)[]) {
     setData((previous) => {
@@ -102,6 +125,7 @@ export default function App() {
       return { ...previous, resume };
     });
     setScore(null);
+    setDashboardScore(null);
   }
   async function handlePdf() {
     setPdfError(null);
@@ -124,9 +148,13 @@ export default function App() {
   const r = data.resume;
 
   return <div className="app-shell">
-    <header className="topbar"><a href="#top" className="brand"><span className="brand-mark"><FileText size={19} /></span><span>resume<span className="brand-light">studio</span><small>YOUR CAREER, ON PAPER</small></span></a>
-      <div className="topbar-right"><span className="privacy-note"><LockKeyhole size={14} /> Private to this browser</span><span className="avatar" aria-hidden="true">RS</span></div>
+    <header className="topbar"><button type="button" className="brand brand-button" onClick={() => navigate('home')} aria-label="Resume Studio home"><span className="brand-mark"><FileText size={19} /></span><span>resume<span className="brand-light">studio</span><small>YOUR CAREER, ON PAPER</small></span></button>
+      <div className="topbar-right"><nav className="top-navigation" aria-label="Main navigation"><button type="button" onClick={() => navigate('home')} aria-current={view === 'home' ? 'page' : undefined}>Home</button><button type="button" onClick={() => navigate('editor')} aria-current={view === 'editor' ? 'page' : undefined}>Editor</button></nav><span className="privacy-note"><LockKeyhole size={14} /> Private to this browser</span><span className="avatar" aria-hidden="true">RS</span></div>
     </header>
+    {view === 'home' ? <>
+      {storageError && <div className="dashboard-alert alert" role="alert"><CircleAlert size={18} /><div>{storageError}{blocked && <button type="button" className="inline-button" onClick={() => setBlocked(false)}>Replace saved data</button>}</div></div>}
+      <Dashboard resume={data.resume} score={dashboardScore} onCheck={() => setDashboardScore(scoreReadiness(data.resume))} onEdit={() => navigate('editor')} />
+    </> :
     <div className="workspace" id="top">
       <aside className="sidebar" aria-label="Resume sections">
         <div className="sidebar-label">YOUR WORKSPACE</div>
@@ -178,7 +206,7 @@ export default function App() {
               <button type="button" className="score-button" onClick={() => setScore(scoreResume(r, data.jobDescription))}><ScanLine size={16} /> Check my resume <ArrowRight size={16} /></button>
               <p className="score-disclaimer">These are simple estimates, not actual employer ATS scores or a guarantee of results.</p>
               {score && <div className="score-results" aria-live="polite">
-                <div className="score-block"><div><span>GENERAL READINESS</span><strong>{score.readiness}<small>/ 100</small></strong></div><p>Based on six resume completeness checks.</p></div>
+                <div className="score-block"><div><span>GENERAL READINESS</span><strong>{score.readiness}<small>/ 100</small></strong></div><p>Based on {score.checks.length} rule-based resume checks.</p></div>
                 <div className="score-block"><div><span>JOB DESCRIPTION MATCH</span><strong>{score.match ? <>{score.match.score}<small>/ 100</small></> : '—'}</strong></div><p>{score.match ? 'Share of distinct job-description keywords found in your resume.' : score.matchMessage}</p></div>
                 <h4>What to work on</h4>
                 <ul className="feedback-list">{score.checks.map((check) => <li key={check.label}><span className={check.passed ? 'check-pass' : 'check-missing'}>{check.passed ? <Check size={13} /> : '!'}</span><span>{check.passed ? check.label : check.advice} <small>({check.points} pts)</small></span></li>)}</ul>
@@ -196,6 +224,6 @@ export default function App() {
         </div>
         <footer className="page-footer"><span>© Resume Studio · Made for your next chapter</span><span><LinkIcon size={13} /> Your data, your story.</span></footer>
       </main>
-    </div>
+    </div>}
   </div>;
 }

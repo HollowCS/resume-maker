@@ -1,6 +1,7 @@
 import { resumeText, type Resume } from './model';
 
-type Check = { label: string; passed: boolean; points: number; advice: string };
+export type Check = { label: string; passed: boolean; points: number; advice: string };
+export type ReadinessResult = { readiness: number; checks: Check[] };
 export type ScoreResult = {
   readiness: number;
   checks: Check[];
@@ -21,16 +22,24 @@ export function keywords(text: string): string[] {
   return [...new Set(words.filter((word) => word.length > 1 && !stopWords.has(word) && !/^\d+$/.test(word)))];
 }
 
-export function scoreResume(resume: Resume, jobDescription: string): ScoreResult {
+export function scoreReadiness(resume: Resume): ReadinessResult {
+  const work = [...resume.experience, ...resume.projects];
   const checks: Check[] = [
     { label: 'Name and professional title', passed: Boolean(resume.name.trim() && resume.headline.trim()), points: 10, advice: 'Add your name and a clear professional title.' },
-    { label: 'Contact information', passed: Boolean(resume.email.trim() && (resume.phone.trim() || resume.website.trim())), points: 15, advice: 'Add an email and a phone number or professional link.' },
-    { label: 'Professional summary', passed: resume.summary.trim().length >= 40, points: 15, advice: 'Write a summary of at least 40 characters.' },
-    { label: 'Experience details', passed: resume.experience.some((entry) => Boolean(entry.title.trim() && entry.organization.trim() && entry.description.trim())), points: 25, advice: 'Add a role, organization, and description for at least one experience.' },
-    { label: 'Education', passed: resume.education.some((entry) => Boolean(entry.title.trim() && entry.organization.trim())), points: 15, advice: 'Add a qualification and institution.' },
-    { label: 'Skills', passed: resume.skills.split(/[,\n]/).filter((skill) => skill.trim()).length >= 3, points: 20, advice: 'List at least three skills, separated by commas or new lines.' },
+    { label: 'Contact information', passed: Boolean(resume.email.trim() && (resume.phone.trim() || resume.website.trim())), points: 10, advice: 'Add an email and a phone number or professional link.' },
+    { label: 'Professional summary', passed: resume.summary.trim().length >= 40, points: 10, advice: 'Write a summary of at least 40 characters about your background and strengths.' },
+    { label: 'Experience or projects', passed: work.some((entry) => Boolean(entry.title.trim() && entry.description.trim())), points: 15, advice: 'Add a role or project with a title and description relevant to your goals.' },
+    { label: 'Education or training', passed: resume.education.some((entry) => Boolean(entry.title.trim() && entry.organization.trim())) || /\b(certifications?|certificates?|training)\b/i.test(resume.additionalInfo), points: 10, advice: 'If relevant, add a qualification and institution, or a certification or training.' },
+    { label: 'Skills', passed: resume.skills.split(/[,\n]/).filter((skill) => skill.trim()).length >= 3, points: 10, advice: 'List at least three skills, separated by commas or new lines.' },
+    { label: 'Informative work details', passed: work.some((entry) => entry.description.trim().length >= 40), points: 20, advice: 'Describe a role or project in at least 40 characters, including what you did and why it mattered.' },
+    { label: 'Measurable impact', passed: work.some((entry) => /\b\d+(?:[.,]\d+)?\s*(?:%|percent\b|users?\b|customers?\b|clients?\b|projects?\b|hours?\b|days?\b|weeks?\b|months?\b|dollars?\b)/i.test(entry.description)), points: 15, advice: 'Where accurate and available, add a measurable result such as a percentage, time saved, or number of users. Do not invent figures.' },
   ];
   const readiness = checks.reduce((total, check) => total + (check.passed ? check.points : 0), 0);
+  return { readiness, checks };
+}
+
+export function scoreResume(resume: Resume, jobDescription: string): ScoreResult {
+  const { readiness, checks } = scoreReadiness(resume);
   if (!jobDescription.trim()) {
     return { readiness, checks, match: null, matchMessage: 'Add a job description to see a job-match estimate.' };
   }

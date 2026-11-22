@@ -13,7 +13,10 @@ vi.mock('./importResume', async (importOriginal) => {
 });
 
 describe('resume editor', () => {
-  beforeEach(() => localStorage.clear());
+  beforeEach(() => {
+    localStorage.clear();
+    window.history.replaceState(null, '', '/?view=editor');
+  });
   afterEach(() => { cleanup(); vi.restoreAllMocks(); });
 
   it('edits repeatable sections, previews changes, scores on request and reloads saved content', async () => {

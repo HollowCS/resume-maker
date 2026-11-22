@@ -15,7 +15,7 @@ npm run dev
 
 Open the local URL printed by Vite (normally [http://localhost:5173/](http://localhost:5173/); Vite chooses another port if it is in use). Stop the server with `Ctrl+C`.
 
-Add personal details, a summary, experience, education, skills, projects, and additional information such as certifications. Entries can be added or removed, and the preview updates as you type. Select **Download PDF** to generate an A4 PDF in the browser; longer resumes can span multiple pages.
+The home dashboard provides an on-demand readiness estimate and prioritized improvement suggestions. Select **Open resume editor** to add personal details, a summary, experience, education, skills, projects, and additional information such as certifications. Entries can be added or removed, and the preview updates as you type. Select **Download PDF** to generate an A4 PDF in the browser; longer resumes can span multiple pages. Use **Home** or **Editor** to switch views.
 
 ## Import a PDF resume
 
@@ -25,9 +25,9 @@ The importer recognizes common section headings and makes a best-effort guess at
 
 ## Resume check
 
-Select **Check my resume** to calculate a general readiness estimate. It awards 10 points for a name and title, 15 for contact details, 15 for a summary of at least 40 characters, 25 for a complete experience entry, 15 for education, and 20 for at least three skills.
+Select **Check my readiness** on the home dashboard to calculate an estimate and see prioritized suggestions, or **Check my resume** in the editor for the same readiness checks. The eight checks award 10 points for a name and title, 10 for contact details, 10 for a summary of at least 40 characters, 15 for an experience or project entry with a title and description, 10 for education or training, 10 for at least three skills, 20 for an experience or project description of at least 40 characters, and 15 for a measurable result expressed with a recognized unit. Open **See all scoring criteria** on the dashboard for the individual results. The checks are simple heuristics: a score is not a judgment of the truth or quality of the content, and you should never invent achievements or figures.
 
-The job description is optional. When provided, the app also estimates the percentage of distinct, meaningful words in the job description that appear in the resume, after removing common words and standalone numbers. It shows found and missing terms; include missing terms only when they genuinely reflect your experience. Descriptions without meaningful keywords do not get a match score. Editing the resume or job description clears the previous result until you check again.
+The job description is optional and is checked only in the editor. When provided, the app also estimates the percentage of distinct, meaningful words in the job description that appear in the resume, after removing common words and standalone numbers. It shows found and missing terms; include missing terms only when they genuinely reflect your experience. Descriptions without meaningful keywords do not get a match score. Editing or importing resume data clears previous results until you check again; editing the job description clears the editor result but not the dashboard's general-readiness estimate.
 
 **These are simple, rule-based estimates, not actual employer ATS scores.** They do not measure all aspects of a resume, predict a hiring outcome, or reproduce a particular employer's screening system.
 

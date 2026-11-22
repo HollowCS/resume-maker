@@ -2,8 +2,47 @@ import { test, expect } from '@playwright/test';
 import { execFileSync } from 'node:child_process';
 import { readFileSync } from 'node:fs';
 
-test('resume persists, scores on demand, and downloads a text-based multipage PDF', async ({ page }) => {
+test('dashboard checks readiness on demand and keeps scores consistent across navigation', async ({ page }) => {
   await page.goto('/');
+  await expect(page.getByRole('heading', { name: /clearer path/i })).toBeVisible();
+  await page.getByRole('button', { name: 'Check my readiness' }).click();
+  await expect(page.getByText('Start with your resume')).toBeVisible();
+  await page.getByRole('button', { name: 'Go to editor' }).click();
+  await page.getByLabel('Full name').fill('Alex');
+  await page.getByRole('button', { name: 'Home', exact: true }).click();
+  await expect(page.getByText('Insights are waiting')).toBeVisible();
+  await page.getByRole('button', { name: 'Check my readiness' }).click();
+  await expect(page.getByLabel('Readiness score 0 out of 100')).toBeVisible();
+  await expect(page.locator('.dashboard-weaknesses li').first()).toContainText('Informative work details');
+  await page.getByRole('button', { name: 'Open resume editor' }).click();
+  await page.getByLabel('Job description (optional)').fill('React TypeScript');
+  await page.getByRole('button', { name: 'Check my resume' }).click();
+  await expect(page.getByText('JOB DESCRIPTION MATCH')).toBeVisible();
+  await page.goBack();
+  await expect(page.getByLabel('Readiness score 0 out of 100')).toBeVisible();
+  await page.goForward();
+  await page.getByLabel('Professional title').fill('Engineer');
+  await page.getByRole('button', { name: 'Home', exact: true }).click();
+  await expect(page.getByText('Insights are waiting')).toBeVisible();
+  await page.reload();
+  await page.getByRole('button', { name: 'Open resume editor' }).click();
+  await expect(page.getByLabel('Full name')).toHaveValue('Alex');
+  await expect(page.getByLabel('Job description (optional)')).toHaveValue('React TypeScript');
+});
+
+test('dashboard remains usable across desktop and mobile widths', async ({ page }) => {
+  for (const width of [320, 375, 760, 1024, 1440]) {
+    await page.setViewportSize({ width, height: 812 });
+    await page.goto('/');
+    await expect(page.getByRole('button', { name: 'Check my readiness' })).toBeVisible();
+    await page.getByRole('button', { name: 'Check my readiness' }).click();
+    await expect(page.getByText('Start with your resume')).toBeVisible();
+    expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(width);
+  }
+});
+
+test('resume persists, scores on demand, and downloads a text-based multipage PDF', async ({ page }) => {
+  await page.goto('/?view=editor');
   await page.getByLabel('Full name').fill('José Morgan');
   await page.getByLabel('Professional title').fill('Software Engineer');
   await page.getByLabel('Email address').fill('alex@example.com');
@@ -39,7 +78,7 @@ test('resume persists, scores on demand, and downloads a text-based multipage PD
 
 test('mobile layout keeps editor and preview usable without horizontal page overflow', async ({ page }) => {
   await page.setViewportSize({ width: 375, height: 812 });
-  await page.goto('/');
+  await page.goto('/?view=editor');
   await page.getByLabel('Full name').fill('Taylor');
   await expect(page.getByLabel('Resume preview')).toContainText('Taylor');
   expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(375);
@@ -50,7 +89,7 @@ test('mobile layout keeps editor and preview usable without horizontal page over
 test('workspace content has modest responsive spacing at both edges', async ({ page }) => {
   for (const width of [320, 375, 760, 1024, 1440, 1920]) {
     await page.setViewportSize({ width, height: 900 });
-    await page.goto('/');
+    await page.goto('/?view=editor');
     const layout = await page.evaluate(() => {
       const workspace = document.querySelector('.workspace')!.getBoundingClientRect();
       const main = document.querySelector('.main-content')!.getBoundingClientRect();
@@ -86,7 +125,7 @@ test('workspace content has modest responsive spacing at both edges', async ({ p
 test('right preview stays in view while the editor scrolls and remains usable on short screens', async ({ page }) => {
   for (const height of [900, 500]) {
     await page.setViewportSize({ width: 1440, height });
-    await page.goto('/');
+    await page.goto('/?view=editor');
     await page.evaluate(() => window.scrollTo(0, 900));
     const preview = page.locator('.preview-column');
     await expect.poll(async () => Math.round((await preview.boundingBox())!.y)).toBe(0);
@@ -104,7 +143,7 @@ test('right preview stays in view while the editor scrolls and remains usable on
 
 test('mobile preview scrolls with the page without obscuring the editor', async ({ page }) => {
   await page.setViewportSize({ width: 375, height: 812 });
-  await page.goto('/');
+  await page.goto('/?view=editor');
   const preview = page.locator('.preview-column');
   expect(await preview.evaluate((element) => getComputedStyle(element).position)).toBe('static');
   await page.getByLabel('Full name').scrollIntoViewIfNeeded();
@@ -116,7 +155,7 @@ test('mobile preview scrolls with the page without obscuring the editor', async 
 test('left navigation stays visible and scrolls independently on short desktop screens', async ({ page }) => {
   for (const height of [900, 400]) {
     await page.setViewportSize({ width: 1440, height });
-    await page.goto('/');
+    await page.goto('/?view=editor');
     await page.evaluate(() => window.scrollTo(0, 900));
     const sidebar = page.getByLabel('Resume sections', { exact: true });
     await expect.poll(async () => Math.round((await sidebar.boundingBox())!.y)).toBe(0);
@@ -135,7 +174,7 @@ test('left navigation stays visible and scrolls independently on short desktop s
 
 test('mobile section navigation remains accessible without covering the editor', async ({ page }) => {
   await page.setViewportSize({ width: 375, height: 812 });
-  await page.goto('/');
+  await page.goto('/?view=editor');
   await page.evaluate(() => window.scrollTo(0, 900));
   const menu = page.locator('.mobile-navigation');
   await expect.poll(async () => Math.round((await menu.boundingBox())!.y)).toBe(0);
@@ -149,7 +188,7 @@ test('mobile section navigation remains accessible without covering the editor',
 });
 
 test('imports a real exported PDF locally after review and preserves unchecked data', async ({ page }) => {
-  await page.goto('/');
+  await page.goto('/?view=editor');
   await page.getByLabel('Full name').fill('Jordan Smith');
   await page.getByLabel('Professional title').fill('Software Engineer');
   await page.getByLabel('Email address').fill('jordan@example.com');
@@ -169,6 +208,10 @@ test('imports a real exported PDF locally after review and preserves unchecked d
   await page.getByLabel('Full name').fill('Existing Person');
   await page.getByLabel('Your skills').fill('Existing skills');
   await page.getByLabel('Job description (optional)').fill('Keep this job description');
+  await page.getByRole('button', { name: 'Home', exact: true }).click();
+  await page.getByRole('button', { name: 'Check my readiness' }).click();
+  await expect(page.getByLabel(/Readiness score \d+ out of 100/)).toBeVisible();
+  await page.getByRole('button', { name: 'Open resume editor' }).click();
   await page.getByLabel('Choose PDF resume').setInputFiles({
     name: 'resume.pdf', mimeType: 'application/pdf', buffer: readFileSync(pdfPath!),
   });
@@ -184,6 +227,9 @@ test('imports a real exported PDF locally after review and preserves unchecked d
   await expect(page.getByLabel('Job title')).toHaveValue('Engineer');
   await expect(page.getByLabel('Company')).toHaveValue('Example Corp');
   await expect(page.getByLabel('Description', { exact: true })).toContainText('Built accessible apps.');
+  await page.getByRole('button', { name: 'Home', exact: true }).click();
+  await expect(page.getByText('Insights are waiting')).toBeVisible();
+  await page.getByRole('button', { name: 'Open resume editor' }).click();
   await page.reload();
   await expect(page.getByLabel('Your skills')).toHaveValue('React, TypeScript, Testing');
   await expect(page.getByLabel('Additional information')).toHaveValue('Certifications: Example credential');
@@ -194,7 +240,7 @@ test('reports a PDF with no selectable text', async ({ browser, page }) => {
   await blankPage.setContent('<html><body></body></html>');
   const blankPdf = await blankPage.pdf();
   await blankPage.close();
-  await page.goto('/');
+  await page.goto('/?view=editor');
   await page.getByLabel('Full name').fill('Original');
   await page.getByLabel('Choose PDF resume').setInputFiles({
     name: 'scan.pdf', mimeType: 'application/pdf', buffer: blankPdf,
@@ -204,7 +250,7 @@ test('reports a PDF with no selectable text', async ({ browser, page }) => {
 });
 
 test('rejects a damaged PDF without changing existing fields', async ({ page }) => {
-  await page.goto('/');
+  await page.goto('/?view=editor');
   await page.getByLabel('Full name').fill('Original');
   await page.getByLabel('Choose PDF resume').setInputFiles({
     name: 'broken.pdf', mimeType: 'application/pdf', buffer: Buffer.from('not a PDF'),
@@ -220,7 +266,7 @@ test('reports password-protected PDFs without changing the resume', async ({ pag
     pdf.createPdf({ content: ['Private resume'], userPassword: 'secret' }, undefined, undefined, fonts)
       .getBuffer(buffer => process.stdout.write(buffer));
   `]);
-  await page.goto('/');
+  await page.goto('/?view=editor');
   await page.getByLabel('Full name').fill('Original');
   await page.getByLabel('Choose PDF resume').setInputFiles({
     name: 'protected.pdf', mimeType: 'application/pdf', buffer: encryptedPdf,
