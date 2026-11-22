@@ -11,6 +11,7 @@ const fields: { key: FieldName; label: string }[] = [
   { key: 'summary', label: 'Summary' }, { key: 'experience', label: 'Experience' },
   { key: 'education', label: 'Education' }, { key: 'skills', label: 'Skills' },
   { key: 'projects', label: 'Projects' },
+  { key: 'additionalInfo', label: 'Additional information' },
 ];
 
 function display(value: Resume[FieldName]): string {

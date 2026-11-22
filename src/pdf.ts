@@ -30,6 +30,7 @@ export function createPdfDefinition(resume: Resume): TDocumentDefinitions {
   ];
   groups.forEach(({ title, entries }) => section(title, entries.filter(entryHasContent).flatMap(entryContent)));
   if (resume.skills.trim()) section('Skills', [{ text: resume.skills }]);
+  if (resume.additionalInfo.trim()) section('Additional information', [{ text: resume.additionalInfo }]);
   return {
     pageSize: 'A4',
     pageMargins: [48, 48, 48, 48],

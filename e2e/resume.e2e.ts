@@ -54,6 +54,7 @@ test('imports a real exported PDF locally after review and preserves unchecked d
   await page.getByLabel('Email address').fill('jordan@example.com');
   await page.getByLabel('Your summary').fill('Builds reliable systems for customers.');
   await page.getByLabel('Your skills').fill('React, TypeScript, Testing');
+  await page.getByLabel('Additional information').fill('Certifications: Example credential');
   await page.getByRole('button', { name: 'Add experience' }).click();
   await page.getByLabel('Job title').fill('Engineer');
   await page.getByLabel('Company').fill('Example Corp');
@@ -77,12 +78,14 @@ test('imports a real exported PDF locally after review and preserves unchecked d
   await page.getByRole('button', { name: 'Apply selected fields' }).click();
   await expect(page.getByLabel('Full name')).toHaveValue('Existing Person');
   await expect(page.getByLabel('Your skills')).toHaveValue('React, TypeScript, Testing');
+  await expect(page.getByLabel('Additional information')).toHaveValue('Certifications: Example credential');
   await expect(page.getByLabel('Job description (optional)')).toHaveValue('Keep this job description');
   await expect(page.getByLabel('Job title')).toHaveValue('Engineer');
   await expect(page.getByLabel('Company')).toHaveValue('Example Corp');
   await expect(page.getByLabel('Description', { exact: true })).toContainText('Built accessible apps.');
   await page.reload();
   await expect(page.getByLabel('Your skills')).toHaveValue('React, TypeScript, Testing');
+  await expect(page.getByLabel('Additional information')).toHaveValue('Certifications: Example credential');
 });
 
 test('reports a PDF with no selectable text', async ({ browser, page }) => {

@@ -20,6 +20,7 @@ export type Resume = {
   education: Entry[];
   skills: string;
   projects: Entry[];
+  additionalInfo: string;
 };
 
 export type DocumentData = { resume: Resume; jobDescription: string };
@@ -36,6 +37,7 @@ export const blankResume = (): Resume => ({
   education: [],
   skills: '',
   projects: [],
+  additionalInfo: '',
 });
 
 export const blankDocument = (): DocumentData => ({
@@ -61,7 +63,7 @@ export const entryHasContent = (entry: Entry) =>
 
 export const resumeText = (resume: Resume) => [
   resume.name, resume.headline, resume.email, resume.phone, resume.location, resume.website,
-  resume.summary, resume.skills,
+  resume.summary, resume.skills, resume.additionalInfo,
   ...[...resume.experience, ...resume.education, ...resume.projects].flatMap(
     ({ title, organization, location, startDate, endDate, description }) =>
       [title, organization, location, startDate, endDate, description],

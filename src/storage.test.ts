@@ -14,6 +14,21 @@ describe('local persistence', () => {
     expect(loadDocument(localStorage)).toEqual({ data, error: null });
   });
 
+  it('loads previously saved resumes without additional information', () => {
+    const data = blankDocument();
+    const { additionalInfo: _additionalInfo, ...legacyResume } = data.resume;
+    localStorage.setItem(STORAGE_KEY, JSON.stringify({ version: 1, data: { ...data, resume: legacyResume } }));
+    expect(loadDocument(localStorage)).toEqual({ data, error: null });
+  });
+
+  it('rejects invalid additional information without overwriting saved data', () => {
+    const data = blankDocument();
+    const original = JSON.stringify({ version: 1, data: { ...data, resume: { ...data.resume, additionalInfo: 42 } } });
+    localStorage.setItem(STORAGE_KEY, original);
+    expect(loadDocument(localStorage).error).toContain('not been overwritten');
+    expect(localStorage.getItem(STORAGE_KEY)).toBe(original);
+  });
+
   it('does not overwrite malformed or unsupported saved data', () => {
     const original = '{"version":99,"data":{}}';
     localStorage.setItem(STORAGE_KEY, original);

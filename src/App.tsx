@@ -118,6 +118,7 @@ export default function App() {
     { id: 'education', label: 'Education', icon: <GraduationCap size={16} /> },
     { id: 'skills', label: 'Skills', icon: <Wrench size={16} /> },
     { id: 'projects', label: 'Projects', icon: <FolderKanban size={16} /> },
+    { id: 'additional', label: 'Additional information', icon: <FileText size={16} /> },
     { id: 'ats-check', label: 'Resume check', icon: <ScanLine size={16} /> },
   ];
   const r = data.resume;
@@ -162,6 +163,9 @@ export default function App() {
               <Field label="Your skills" value={r.skills} onChange={(v) => changeResume('skills', v)} multiline placeholder="e.g. Research, Figma, Project management" hint="Separate skills with commas or new lines." />
             </SectionCard>
             <EntriesEditor type="projects" entries={r.projects} onChange={(entries) => changeEntries('projects', entries)} />
+            <SectionCard id="additional" title="Additional information" hint="Add certifications, languages, or other relevant details." icon={<FileText size={18} />}>
+              <Field label="Additional information" value={r.additionalInfo} onChange={(v) => changeResume('additionalInfo', v)} multiline placeholder="Certifications, languages, or other information" />
+            </SectionCard>
             <SectionCard id="ats-check" title="Resume check" hint="Get a little more confident before you apply." icon={<ScanLine size={18} />}>
               <div className="score-intro"><Sparkles size={18} /><p>Get a quick readiness check and see how your resume matches a role.</p></div>
               <Field label="Job description (optional)" value={data.jobDescription} onChange={(value) => { setData((previous) => ({ ...previous, jobDescription: value })); setScore(null); }} multiline placeholder="Paste a job description here to check for keyword matches." hint="Saved only in this browser, along with your resume." />

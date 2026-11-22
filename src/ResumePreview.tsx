@@ -32,8 +32,9 @@ export default function ResumePreview({ resume }: { resume: Resume }) {
       </section>;
     })}
     {resume.skills && <section className="resume-section"><h3>Skills</h3><p className="preserve-lines">{resume.skills}</p></section>}
+    {resume.additionalInfo && <section className="resume-section"><h3>Additional information</h3><p className="preserve-lines">{resume.additionalInfo}</p></section>}
     {!resume.summary && !resume.experience.some(entryHasContent) && !resume.education.some(entryHasContent) &&
-      !resume.projects.some(entryHasContent) && !resume.skills &&
+      !resume.projects.some(entryHasContent) && !resume.skills && !resume.additionalInfo &&
       <div className="preview-empty"><span></span><span></span><span></span><p>Your story starts here. Fill in the sections to see your resume take shape.</p></div>}
   </article>;
 }

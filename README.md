@@ -15,13 +15,13 @@ npm run dev
 
 Open the local URL printed by Vite (normally [http://localhost:5173/](http://localhost:5173/); Vite chooses another port if it is in use). Stop the server with `Ctrl+C`.
 
-Add personal details, a summary, experience, education, skills, and projects. Entries can be added or removed, and the preview updates as you type. Select **Download PDF** to generate an A4 PDF in the browser; longer resumes can span multiple pages.
+Add personal details, a summary, experience, education, skills, projects, and additional information such as certifications. Entries can be added or removed, and the preview updates as you type. Select **Download PDF** to generate an A4 PDF in the browser; longer resumes can span multiple pages.
 
 ## Import a PDF resume
 
 Select **Choose PDF resume** to extract selectable text from an existing PDF (up to 15 MB). Extraction runs locally in the browser; the file is not sent to a server. Review the suggested fields, uncheck any you do not want to replace, and choose **Apply selected fields**. Fields not selected and the job description remain unchanged. You can cancel the import without changing your resume.
 
-The importer recognizes common section headings and makes a best-effort guess at contact details and section contents. Experience, education, and projects may be grouped into one entry per section rather than separated automatically. Review the editable result, and use **View all extracted text** to copy anything the importer missed. Complex layouts, columns, and uncommon headings may not parse correctly. Scanned or image-only PDFs, password-protected PDFs, and files without selectable text are not supported; pages without text are identified during review.
+The importer recognizes common section headings and makes a best-effort guess at contact details and section contents. It can separate some experience and education entries and preserves recognized additional information; other formats may still be grouped together. Review the editable result, and use **View all extracted text** to copy anything the importer missed. Complex layouts, columns, and uncommon headings may not parse correctly. Scanned or image-only PDFs, password-protected PDFs, and files without selectable text are not supported; pages without text are identified during review.
 
 ## Resume check
 

@@ -12,9 +12,10 @@ function isEntry(value: unknown): value is Entry {
   return isRecord(value) && entryFields.every((field) => typeof value[field] === 'string');
 }
 
-function isResume(value: unknown): value is Resume {
+function isResume(value: unknown): value is Omit<Resume, 'additionalInfo'> & { additionalInfo?: string } {
   return isRecord(value) &&
     resumeFields.every((field) => typeof value[field] === 'string') &&
+    (value.additionalInfo === undefined || typeof value.additionalInfo === 'string') &&
     ['experience', 'education', 'projects'].every(
       (field) => Array.isArray(value[field]) && value[field].every(isEntry),
     );
@@ -31,7 +32,7 @@ export function loadDocument(storage: Storage): LoadResult {
         !isResume(parsed.data.resume) || typeof parsed.data.jobDescription !== 'string') {
       throw new Error('Unsupported or invalid document');
     }
-    return { data: { resume: parsed.data.resume, jobDescription: parsed.data.jobDescription }, error: null };
+    return { data: { resume: { ...parsed.data.resume, additionalInfo: parsed.data.resume.additionalInfo ?? '' }, jobDescription: parsed.data.jobDescription }, error: null };
   } catch {
     return {
       data: blankDocument(),

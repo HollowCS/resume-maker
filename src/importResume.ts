@@ -1,6 +1,6 @@
 import { blankResume, newEntry, type Resume } from './model';
 
-type Section = 'summary' | 'skills' | 'experience' | 'education' | 'projects';
+type Section = 'summary' | 'skills' | 'experience' | 'education' | 'projects' | 'additional';
 
 const headings: Record<string, Section> = {
   summary: 'summary', profile: 'summary', 'professional summary': 'summary',
@@ -12,12 +12,64 @@ const headings: Record<string, Section> = {
   'employment history': 'experience', 'work history': 'experience',
   education: 'education', qualifications: 'education',
   projects: 'projects', 'personal projects': 'projects',
+  'additional information': 'additional', certifications: 'additional',
+  'awards and certifications': 'additional', languages: 'additional',
 };
 
 const emailPattern = /[\w.+-]+@[\w.-]+\.[a-z]{2,}/i;
 const phonePattern = /(?:\+?\d[\d\s().-]{6,}\d)/;
 const websitePattern = /(?:https?:\/\/|www\.|(?:linkedin\.com|github\.com)\/)[^\s|·]+/i;
 const contactPattern = /@|https?:\/\/|www\.|linkedin\.com|github\.com|\d{5,}/i;
+const datePattern = /(?:\b(?:jan(?:uary)?|feb(?:ruary)?|mar(?:ch)?|apr(?:il)?|may|jun(?:e)?|jul(?:y)?|aug(?:ust)?|sep(?:tember)?|oct(?:ober)?|nov(?:ember)?|dec(?:ember)?)\s+)?(?:19|20)\d{2}/i;
+const dateRangePattern = /((?:\b(?:jan(?:uary)?|feb(?:ruary)?|mar(?:ch)?|apr(?:il)?|may|jun(?:e)?|jul(?:y)?|aug(?:ust)?|sep(?:tember)?|oct(?:ober)?|nov(?:ember)?|dec(?:ember)?)\s+)?(?:19|20)\d{2})\s*[-–—]\s*((?:(?:jan(?:uary)?|feb(?:ruary)?|mar(?:ch)?|apr(?:il)?|may|jun(?:e)?|jul(?:y)?|aug(?:ust)?|sep(?:tember)?|oct(?:ober)?|nov(?:ember)?|dec(?:ember)?)\s+)?(?:19|20)\d{2}|present|current)/i;
+const degreePattern = /^(?:(?:master(?:s|'s)?|bachelor(?:s|'s)?|associate(?:'s)?|doctor(?:ate)?|diploma|certificate)\b|(?:b\.?s\.?|m\.?s\.?|b\.?a\.?|m\.?a\.?|b\.?sc\.?|m\.?sc\.?|ph\.?d\.?)\b)/i;
+
+function splitEntries(lines: string[], section: 'experience' | 'education' | 'projects') {
+  const entries: ReturnType<typeof newEntry>[] = [];
+  let entry: ReturnType<typeof newEntry> | undefined;
+  for (let index = 0; index < lines.length; index++) {
+    const line = lines[index];
+    const next = lines[index + 1];
+    const dateRange = line.match(dateRangePattern);
+    const dateFree = line.replace(dateRangePattern, '').replace(/\s*[|·]\s*$/, '').trim();
+    const inlineRole = section === 'experience' && dateFree.length < 120 && /^.{2,80},\s*[^,]{2,70}$/.test(dateFree) &&
+      (Boolean(dateRange) || /\b(?:engineer|developer|consultant|analyst|manager|designer|director|intern|specialist|architect|lead|scientist|officer|associate|annotator|technician)\b/i.test(dateFree.split(',')[0]));
+    const educationStart = section === 'education' && degreePattern.test(line);
+    if (inlineRole || educationStart) {
+      entry = newEntry();
+      entries.push(entry);
+      if (inlineRole) {
+        const separator = dateFree.lastIndexOf(',');
+        entry.title = dateFree.slice(0, separator).trim();
+        entry.organization = dateFree.slice(separator + 1).trim();
+        if (dateRange) {
+          entry.startDate = dateRange[1];
+          entry.endDate = dateRange[2];
+        }
+      } else {
+        entry.title = line;
+        if (next && !degreePattern.test(next) && next.length < 100 && !/^[•*\-]/.test(next)) {
+          entry.organization = next;
+          index++;
+        }
+      }
+    } else {
+      if (!entry) {
+        entry = newEntry();
+        entries.push(entry);
+        if (next && line.length <= 100 && next.length <= 100 &&
+            !/^[•*\-]/.test(line) && !/^[•*\-]/.test(next) && !datePattern.test(line)) {
+          entry.title = line;
+          entry.organization = next;
+          index++;
+          continue;
+        }
+      }
+      entry.description += (entry.description ? '\n' : '') + line;
+    }
+  }
+  return entries;
+}
 
 function heading(line: string): { section: Section; remainder: string } | null {
   const [label, ...rest] = line.split(':');
@@ -30,13 +82,17 @@ function heading(line: string): { section: Section; remainder: string } | null {
 export function parseResumeText(text: string): Resume {
   const resume = blankResume();
   const lines = text.replace(/\r/g, '').split('\n').map((line) => line.trim()).filter(Boolean);
-  const sections: Record<Section, string[]> = { summary: [], skills: [], experience: [], education: [], projects: [] };
+  const sections: Record<Section, string[]> = { summary: [], skills: [], experience: [], education: [], projects: [], additional: [] };
   const header: string[] = [];
   let current: Section | null = null;
   for (const line of lines) {
     const found = heading(line);
     if (found) {
       current = found.section;
+      if (current === 'additional' && !/^additional information\s*:?$/i.test(line)) {
+        sections.additional.push(line);
+        continue;
+      }
       if (found.remainder) sections[current].push(found.remainder);
     } else if (current) {
       sections[current].push(line);
@@ -57,21 +113,41 @@ export function parseResumeText(text: string): Resume {
     resume.location = nonContacts[2] ?? '';
   }
   resume.summary = sections.summary.join('\n');
-  resume.skills = sections.skills.join('\n');
+  const additionalSkills = sections.additional.filter((line) => /^(?:languages?|tools(?: used)?|technical skills)\s*:/i.test(line));
+  resume.skills = [...sections.skills, ...additionalSkills].join('\n');
+  resume.additionalInfo = sections.additional.join('\n');
   for (const section of ['experience', 'education', 'projects'] as const) {
-    if (sections[section].length) {
-      const [first, second, ...rest] = sections[section];
-      const hasHeading = Boolean(second && first.length <= 100 && second.length <= 100 &&
-        !/^[•*\-]/.test(first) && !/^[•*\-]/.test(second));
-      resume[section] = [{
-        ...newEntry(),
-        title: hasHeading ? first : '',
-        organization: hasHeading ? second : '',
-        description: hasHeading ? rest.join('\n') : sections[section].join('\n'),
-      }];
-    }
+    resume[section] = splitEntries(sections[section], section);
   }
   return resume;
+}
+
+type PdfTextItem = { str: string; transform: number[]; width: number };
+
+export function reconstructLines(items: PdfTextItem[]): string {
+  const lines: { y: number; items: PdfTextItem[] }[] = [];
+  for (const item of items) {
+    if (!item.str.trim()) continue;
+    const y = item.transform[5];
+    let line = lines.find((candidate) => Math.abs(candidate.y - y) <= 2);
+    if (!line) {
+      line = { y, items: [] };
+      lines.push(line);
+    }
+    line.items.push(item);
+  }
+  return lines.sort((a, b) => b.y - a.y).map((line) => {
+    let text = '';
+    let previous: PdfTextItem | undefined;
+    for (const item of line.items.sort((a, b) => a.transform[4] - b.transform[4])) {
+      const gap = previous ? item.transform[4] - (previous.transform[4] + previous.width) : 0;
+      const spaceThreshold = Math.max(1, Math.abs(item.transform[3]) * 0.12);
+      if (text && !/\s$/.test(text) && !/^\s/.test(item.str) && gap > spaceThreshold) text += ' ';
+      text += item.str;
+      previous = item;
+    }
+    return text.trim();
+  }).filter(Boolean).join('\n');
 }
 
 export async function extractPdfText(file: File): Promise<{ text: string; emptyPages: number[] }> {
@@ -94,25 +170,7 @@ export async function extractPdfText(file: File): Promise<{ text: string; emptyP
     for (let pageNumber = 1; pageNumber <= pdf.numPages; pageNumber++) {
       const page = await pdf.getPage(pageNumber);
       const content = await page.getTextContent();
-      const lines: string[] = [];
-      let line = '';
-      let previousY: number | null = null;
-      for (const item of content.items) {
-        if (!('str' in item)) continue;
-        const y = item.transform[5];
-        if (previousY !== null && Math.abs(y - previousY) > 3 && line.trim()) {
-          lines.push(line.trim());
-          line = '';
-        }
-        if (item.str) line += (line && !/\s$/.test(line) && !/^\s/.test(item.str) ? ' ' : '') + item.str;
-        if (item.hasEOL && line.trim()) {
-          lines.push(line.trim());
-          line = '';
-        }
-        previousY = y;
-      }
-      if (line.trim()) lines.push(line.trim());
-      const pageText = lines.join('\n');
+      const pageText = reconstructLines(content.items.filter((item): item is Extract<typeof item, { str: string }> => 'str' in item));
       if (!pageText.trim()) emptyPages.push(pageNumber);
       pages.push(pageText);
       page.cleanup();
