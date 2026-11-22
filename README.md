@@ -4,10 +4,10 @@ A browser-based resume builder with a live preview, downloadable text-based PDF,
 
 ## Getting started
 
-Install Node.js 20 or newer (including npm), then clone this branch and start the app:
+Install Node.js 20 or newer (including npm), then clone the repository and start the app:
 
 ```sh
-git clone --branch hollowcs-resume-maker-planning https://github.com/HollowCS/resume-maker.git
+git clone https://github.com/HollowCS/resume-maker.git
 cd resume-maker
 npm ci
 npm run dev
