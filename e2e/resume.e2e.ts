@@ -105,6 +105,41 @@ test('mobile preview scrolls with the page without obscuring the editor', async 
   expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(375);
 });
 
+test('left navigation stays visible and scrolls independently on short desktop screens', async ({ page }) => {
+  for (const height of [900, 400]) {
+    await page.setViewportSize({ width: 1440, height });
+    await page.goto('/');
+    await page.evaluate(() => window.scrollTo(0, 900));
+    const sidebar = page.getByLabel('Resume sections', { exact: true });
+    await expect.poll(async () => Math.round((await sidebar.boundingBox())!.y)).toBe(0);
+    await page.evaluate(() => window.scrollTo(0, 1600));
+    await expect.poll(async () => Math.round((await sidebar.boundingBox())!.y)).toBe(0);
+    const dimensions = await sidebar.evaluate((element) => {
+      element.scrollTop = element.scrollHeight;
+      return { top: element.scrollTop, height: element.clientHeight, content: element.scrollHeight };
+    });
+    expect(dimensions.height).toBeLessThanOrEqual(height);
+    if (dimensions.content > dimensions.height) expect(dimensions.top).toBeGreaterThan(0);
+    await sidebar.getByRole('link', { name: /Resume check/ }).click();
+    await expect(page.locator('#ats-check')).toBeInViewport();
+  }
+});
+
+test('mobile section navigation remains accessible without covering the editor', async ({ page }) => {
+  await page.setViewportSize({ width: 375, height: 812 });
+  await page.goto('/');
+  await page.evaluate(() => window.scrollTo(0, 900));
+  const menu = page.locator('.mobile-navigation');
+  await expect.poll(async () => Math.round((await menu.boundingBox())!.y)).toBe(0);
+  await page.getByText('Resume sections', { exact: true }).click();
+  await page.getByRole('navigation', { name: 'Mobile resume sections' }).getByRole('link', { name: 'Skills' }).click();
+  await expect(page.locator('#skills')).toBeInViewport();
+  await expect(menu.locator('nav')).toBeHidden();
+  await page.getByLabel('Your skills').fill('Testing, Accessibility');
+  await expect(page.getByLabel('Your skills')).toHaveValue('Testing, Accessibility');
+  expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(375);
+});
+
 test('imports a real exported PDF locally after review and preserves unchecked data', async ({ page }) => {
   await page.goto('/');
   await page.getByLabel('Full name').fill('Jordan Smith');

@@ -136,6 +136,12 @@ export default function App() {
         <div className="sidebar-tip"><span><Lightbulb size={17} /></span><strong>A little tip</strong><p>Specific achievements help your resume stand out.</p></div>
       </aside>
       <main className="main-content">
+        <details className="mobile-navigation">
+          <summary>Resume sections</summary>
+          <nav aria-label="Mobile resume sections">{nav.map((item) => <a href={`#${item.id}`} key={item.id} onClick={(event) => {
+            event.currentTarget.closest('details')?.removeAttribute('open');
+          }}>{item.label}</a>)}</nav>
+        </details>
         <div className="page-heading"><div><div className="eyebrow"><span></span> YOUR RESUME WORKSPACE</div><h1>Let’s build your story<span>.</span></h1><p>Everything you need to create a resume that feels like you.</p></div>
           <button type="button" className="primary-button download-top" onClick={handlePdf} disabled={exporting}><ArrowDownToLine size={16} /> {exporting ? 'Creating PDF…' : 'Download PDF'}</button>
         </div>
