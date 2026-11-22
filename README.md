@@ -4,14 +4,18 @@ A browser-based resume builder with a live preview, downloadable text-based PDF,
 
 ## Getting started
 
-Use Node.js 20 or newer:
+Install Node.js 20 or newer (including npm), then clone this branch and start the app:
 
 ```sh
+git clone --branch hollowcs-resume-maker-planning https://github.com/HollowCS/resume-maker.git
+cd resume-maker
 npm ci
 npm run dev
 ```
 
-Open the local URL printed by Vite. Add personal details, a summary, experience, education, skills, and projects. Entries can be added or removed, and the preview updates as you type. Select **Download PDF** to generate an A4 PDF in the browser; longer resumes can span multiple pages.
+Open the local URL printed by Vite (normally [http://localhost:5173/](http://localhost:5173/); Vite chooses another port if it is in use). Stop the server with `Ctrl+C`.
+
+Add personal details, a summary, experience, education, skills, and projects. Entries can be added or removed, and the preview updates as you type. Select **Download PDF** to generate an A4 PDF in the browser; longer resumes can span multiple pages.
 
 ## Resume check
 
@@ -23,7 +27,7 @@ The job description is optional. When provided, the app also estimates the perce
 
 ## Privacy and storage
 
-Resume data and the optional job description are stored in the browser's local storage on the current device and are not sent to a server by the app. They do not sync across browsers or devices and can be lost when browser data is cleared. Shared-device users should clear site data when finished.
+Resume data and the optional job description are stored in the browser's local storage on the current device and are not sent to a server by the app. Storage is tied to the exact browser origin, so changing the host or port can make saved data appear unavailable. Data does not sync across browsers or devices and can be lost when browser data is cleared. Shared-device users should clear site data when finished.
 
 If saved data is unreadable, the app protects it from automatic overwrite and offers an explicit option to replace it. If browser storage is unavailable or full, an error is shown; changes are not safely persisted until storage works.
 
