@@ -5,6 +5,7 @@ import { loadDocument, saveDocument } from './storage';
 import { scoreResume, type ScoreResult } from './scoring';
 import ResumePreview from './ResumePreview';
 import { downloadPdf } from './pdf';
+import ImportResume from './ImportResume';
 
 type SectionName = 'experience' | 'education' | 'projects';
 type TextField = Exclude<keyof Resume, SectionName>;
@@ -88,6 +89,20 @@ export default function App() {
     setData((previous) => ({ ...previous, resume: { ...previous.resume, [field]: entries } }));
     setScore(null);
   }
+  function applyImport(imported: Resume, selected: (keyof Resume)[]) {
+    setData((previous) => {
+      const resume = { ...previous.resume };
+      for (const key of selected) {
+        if (key === 'experience' || key === 'education' || key === 'projects') {
+          resume[key] = imported[key];
+        } else {
+          resume[key] = imported[key];
+        }
+      }
+      return { ...previous, resume };
+    });
+    setScore(null);
+  }
   async function handlePdf() {
     setPdfError(null);
     setExporting(true);
@@ -128,6 +143,7 @@ export default function App() {
         <div className="columns">
           <div className="editor-column">
             <div className="column-heading"><div><span className="step-number">01</span><div><h2>Build your resume</h2><p>Start with the essentials, then make it yours.</p></div></div><span className="autosave"><span></span>{storageError ? 'Not saved' : 'Saved locally'}</span></div>
+            <ImportResume resume={r} onApply={applyImport} />
             <SectionCard id="personal" title="Personal details" hint="Let’s start with the basics." icon={<UserRound size={18} />}>
               <div className="field-grid">
                 <Field label="Full name" value={r.name} onChange={(v) => changeResume('name', v)} placeholder="e.g. Alex Morgan" />

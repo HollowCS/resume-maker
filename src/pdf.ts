@@ -34,8 +34,8 @@ export function createPdfDefinition(resume: Resume): TDocumentDefinitions {
     pageSize: 'A4',
     pageMargins: [48, 48, 48, 48],
     content,
-    defaultStyle: { font: 'Roboto', fontSize: 10, lineHeight: 1.25 },
-    styles: { sectionHeading: { bold: true, fontSize: 10, color: '#25453d', margin: [0, 16, 0, 5] } },
+    defaultStyle: { font: 'Roboto', fontSize: 11, lineHeight: 1.25 },
+    styles: { sectionHeading: { bold: true, fontSize: 11, color: '#25453d', margin: [0, 16, 0, 5] } },
     info: { title: resume.name.trim() ? `${resume.name.trim()} - Resume` : 'Resume' },
   };
 }

@@ -4,8 +4,13 @@ import userEvent from '@testing-library/user-event';
 import App from './App';
 import { downloadPdf } from './pdf';
 import { STORAGE_KEY } from './storage';
+import { extractPdfText } from './importResume';
 
 vi.mock('./pdf', () => ({ downloadPdf: vi.fn().mockResolvedValue(undefined) }));
+vi.mock('./importResume', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('./importResume')>();
+  return { ...actual, extractPdfText: vi.fn() };
+});
 
 describe('resume editor', () => {
   beforeEach(() => localStorage.clear());
@@ -56,5 +61,37 @@ describe('resume editor', () => {
     expect(screen.getByText('Not saved')).toBeInTheDocument();
     await user.click(screen.getAllByRole('button', { name: 'Download PDF' })[0]);
     expect(await screen.findByText(/Could not create the PDF/)).toBeInTheDocument();
+  });
+
+  it('reviews selected imports without overwriting unchecked fields or the job description', async () => {
+    vi.mocked(extractPdfText).mockResolvedValueOnce({
+      text: 'Jordan Smith\nDesigner\njordan@example.com\nSKILLS\nFigma, Research',
+      emptyPages: [2],
+    });
+    const user = userEvent.setup();
+    render(<App />);
+    await user.type(screen.getByLabelText('Full name'), 'Existing Name');
+    await user.type(screen.getByLabelText('Job description (optional)'), 'Design role');
+    await user.upload(screen.getByLabelText('Choose PDF resume'), new File(['pdf'], 'resume.pdf', { type: 'application/pdf' }));
+    expect(await screen.findByText(/No selectable text was found on page 2/)).toBeInTheDocument();
+    expect(screen.getByLabelText('Full name')).toHaveValue('Existing Name');
+    expect(screen.getByText(/replaces existing full name/)).toBeInTheDocument();
+    await user.click(screen.getByRole('checkbox', { name: /Full name/ }));
+    await user.click(screen.getByRole('button', { name: 'Apply selected fields' }));
+    expect(screen.getByLabelText('Full name')).toHaveValue('Existing Name');
+    expect(screen.getByLabelText('Professional title')).toHaveValue('Designer');
+    expect(screen.getByLabelText('Email address')).toHaveValue('jordan@example.com');
+    expect(screen.getByLabelText('Your skills')).toHaveValue('Figma, Research');
+    expect(screen.getByLabelText('Job description (optional)')).toHaveValue('Design role');
+  });
+
+  it('shows extraction errors without altering the resume', async () => {
+    vi.mocked(extractPdfText).mockRejectedValueOnce(new Error('No selectable text was found. Scanned or image-only PDFs are not supported.'));
+    const user = userEvent.setup();
+    render(<App />);
+    await user.type(screen.getByLabelText('Full name'), 'Existing Name');
+    await user.upload(screen.getByLabelText('Choose PDF resume'), new File(['image'], 'scan.pdf', { type: 'application/pdf' }));
+    expect(await screen.findByRole('alert')).toHaveTextContent('Scanned or image-only PDFs are not supported');
+    expect(screen.getByLabelText('Full name')).toHaveValue('Existing Name');
   });
 });

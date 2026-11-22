@@ -17,6 +17,12 @@ Open the local URL printed by Vite (normally [http://localhost:5173/](http://loc
 
 Add personal details, a summary, experience, education, skills, and projects. Entries can be added or removed, and the preview updates as you type. Select **Download PDF** to generate an A4 PDF in the browser; longer resumes can span multiple pages.
 
+## Import a PDF resume
+
+Select **Choose PDF resume** to extract selectable text from an existing PDF (up to 15 MB). Extraction runs locally in the browser; the file is not sent to a server. Review the suggested fields, uncheck any you do not want to replace, and choose **Apply selected fields**. Fields not selected and the job description remain unchanged. You can cancel the import without changing your resume.
+
+The importer recognizes common section headings and makes a best-effort guess at contact details and section contents. Experience, education, and projects may be grouped into one entry per section rather than separated automatically. Review the editable result, and use **View all extracted text** to copy anything the importer missed. Complex layouts, columns, and uncommon headings may not parse correctly. Scanned or image-only PDFs, password-protected PDFs, and files without selectable text are not supported; pages without text are identified during review.
+
 ## Resume check
 
 Select **Check my resume** to calculate a general readiness estimate. It awards 10 points for a name and title, 15 for contact details, 15 for a summary of at least 40 characters, 25 for a complete experience entry, 15 for education, and 20 for at least three skills.
