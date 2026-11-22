@@ -47,6 +47,34 @@ test('mobile layout keeps editor and preview usable without horizontal page over
   expect(await page.getByLabel('Resume preview').evaluate((element) => parseFloat(getComputedStyle(element).fontSize))).toBeGreaterThanOrEqual(14);
 });
 
+test('workspace panels fill available width without outer side gutters', async ({ page }) => {
+  for (const width of [320, 375, 760, 1024, 1440, 1920]) {
+    await page.setViewportSize({ width, height: 900 });
+    await page.goto('/');
+    const layout = await page.evaluate(() => {
+      const workspace = document.querySelector('.workspace')!.getBoundingClientRect();
+      const main = document.querySelector('.main-content')!.getBoundingClientRect();
+      const columns = document.querySelector('.columns')!.getBoundingClientRect();
+      const sidebar = document.querySelector('.sidebar')!;
+      return {
+        workspaceLeft: workspace.left,
+        workspaceRight: workspace.right,
+        mainLeft: main.left,
+        columnsLeft: columns.left,
+        columnsRight: columns.right,
+        sidebarRight: getComputedStyle(sidebar).display === 'none' ? 0 : sidebar.getBoundingClientRect().right,
+        scrollWidth: document.documentElement.scrollWidth,
+      };
+    });
+    expect(layout.workspaceLeft).toBe(0);
+    expect(layout.workspaceRight).toBe(width);
+    expect(layout.mainLeft).toBe(layout.sidebarRight);
+    expect(layout.columnsLeft).toBe(layout.mainLeft);
+    expect(layout.columnsRight).toBe(width);
+    expect(layout.scrollWidth).toBeLessThanOrEqual(width);
+  }
+});
+
 test('imports a real exported PDF locally after review and preserves unchecked data', async ({ page }) => {
   await page.goto('/');
   await page.getByLabel('Full name').fill('Jordan Smith');
