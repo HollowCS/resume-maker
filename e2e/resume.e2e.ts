@@ -75,6 +75,36 @@ test('workspace panels fill available width without outer side gutters', async (
   }
 });
 
+test('right preview stays in view while the editor scrolls and remains usable on short screens', async ({ page }) => {
+  for (const height of [900, 500]) {
+    await page.setViewportSize({ width: 1440, height });
+    await page.goto('/');
+    await page.evaluate(() => window.scrollTo(0, 900));
+    const preview = page.locator('.preview-column');
+    await expect.poll(async () => Math.round((await preview.boundingBox())!.y)).toBe(0);
+    await page.evaluate(() => window.scrollTo(0, 1600));
+    await expect.poll(async () => Math.round((await preview.boundingBox())!.y)).toBe(0);
+    const dimensions = await preview.evaluate((element) => {
+      element.scrollTop = element.scrollHeight;
+      return { top: element.scrollTop, height: element.clientHeight, content: element.scrollHeight };
+    });
+    expect(dimensions.height).toBeLessThanOrEqual(height);
+    if (dimensions.content > dimensions.height) expect(dimensions.top).toBeGreaterThan(0);
+    await expect(preview.getByRole('button', { name: 'Download PDF' })).toBeVisible();
+  }
+});
+
+test('mobile preview scrolls with the page without obscuring the editor', async ({ page }) => {
+  await page.setViewportSize({ width: 375, height: 812 });
+  await page.goto('/');
+  const preview = page.locator('.preview-column');
+  expect(await preview.evaluate((element) => getComputedStyle(element).position)).toBe('static');
+  await page.getByLabel('Full name').scrollIntoViewIfNeeded();
+  await page.getByLabel('Full name').fill('Taylor');
+  await expect(page.getByLabel('Full name')).toHaveValue('Taylor');
+  expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(375);
+});
+
 test('imports a real exported PDF locally after review and preserves unchecked data', async ({ page }) => {
   await page.goto('/');
   await page.getByLabel('Full name').fill('Jordan Smith');
